@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Квантование сигнала</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Квантование сигнала по уровням</h1>
+        </header>
+
+        <div class="controls">
+            <div class="input-group">
+                <label for="function">Функция f(x):</label>
+                <input type="text" id="function" value="sin(x)" list="functionExamples">
+                <button id="clearFunctionBtn" class="clear-btn" title="Очистить поле">×</button>
+                <datalist id="functionExamples">
+                    <option value="sin(x)">
+                    <option value="cos(x)">
+                    <option value="tan(x)">
+                    <option value="exp(x)">
+                    <option value="log(x)">
+                    <option value="x^2">
+                    <option value="sqrt(x)">
+                    <option value="sin(x)*cos(2*x)">
+                    <option value="exp(-x^2)">
+                    <option value="sinc(x)">
+                    <option value="sin(x) + 0.5*cos(3*x)">
+                </datalist>
+            </div>
+
+            <div class="input-group">
+                <label>Диапазон x:</label>
+                <input type="number" id="xMin" value="-5" step="0.1">
+                <span>до</span>
+                <input type="number" id="xMax" value="5" step="0.1">
+            </div>
+
+            <div class="input-group">
+                <label for="points">Количество точек:</label>
+                <input type="number" id="points" value="100" min="10" max="1000">
+            </div>
+
+            <div class="input-group">
+                <label for="samplingRate">Частота дискретизации (Гц):</label>
+                <input type="number" id="samplingRate" value="10" min="1" max="100">
+            </div>
+
+            <div class="input-group">
+                <label for="showSpectrum">Показать спектр:</label>
+                <input type="checkbox" id="showSpectrum">
+            </div>
+
+            <button id="calculateBtn" class="btn-primary">Рассчитать</button>
+            <button id="analyzeBtn" class="btn-secondary">Анализ гармоник</button>
+        </div>
+        
+
+        <div class="results">
+            <div class="chart-container">
+                <canvas id="originalChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="quantizedChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="sampledChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="spectrumChart"></canvas>
+            </div>
+        </div>
+
+        <div id="error" class="error-message" style="display: none;"></div>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/mathjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.1.0/dist/chartjs-plugin-annotation.min.js"></script>
+</body>
+</html>
