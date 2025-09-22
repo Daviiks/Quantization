@@ -232,3 +232,15 @@ input[type="number"]:focus {
         align-items: stretch;
     }
 }
+
+.control-group {
+    margin: 10px 0;
+}
+
+#quantizationType {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    width: 100%;
+    max-width: 300px;
+}
