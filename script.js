@@ -20,7 +20,7 @@ class QuantizationApp {
         });
 
         // Авторасчет при изменении параметров
-        ['function', 'xMin', 'xMax', 'points'].forEach(id => {
+        ['function', 'xMin', 'xMax', 'points', 'quantizeType'].forEach(id => {
             document.getElementById(id).addEventListener('input', () => {
                 this.calculate();
             });
@@ -147,12 +147,6 @@ class QuantizationApp {
             default:
                 return yValuse.map(y => y > upperThreshold ? 1 : y < lowerThreshold ? - 1: 0);
         }
-        
-        return yValues.map(y => {
-            if (y > upperThreshold) return 1; // Верхний уровень
-            if (y < lowerThreshold) return -1; // Нижний уровень
-            return 0; // Средний уровень
-        });
     }
 
     discretizeSignal(xValues, yValues, samplingRate) {
