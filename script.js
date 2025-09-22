@@ -134,7 +134,7 @@ class QuantizationApp {
         const lowerThreshold = yMin + range / 3;
         
         return yValues.map(y => {
-            if (y > upperThreshold) return -0; // Верхний уровень
+            if (y > upperThreshold) return 1; // Верхний уровень
             if (y < lowerThreshold) return -1; // Нижний уровень
             return 0; // Средний уровень
         });
