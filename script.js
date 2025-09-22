@@ -19,12 +19,12 @@ class QuantizationApp {
             this.clearFunctionField()
         });
 
-elements.forEach(id => {
-            const element = document.getElementById(id);
-            if (element) {
-                element.addEventListener(id === 'calculateBtn' ? 'click' : 'input', 
-                    () => this.calculate());
-            }
+        elements.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener(id === 'calculateBtn' ? 'click' : 'input', 
+                        () => this.calculate());
+                }
         });
 
         // Авторасчет при изменении параметров
