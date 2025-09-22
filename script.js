@@ -19,6 +19,14 @@ class QuantizationApp {
             this.clearFunctionField()
         });
 
+elements.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener(id === 'calculateBtn' ? 'click' : 'input', 
+                    () => this.calculate());
+            }
+        });
+
         // Авторасчет при изменении параметров
         ['function', 'xMin', 'xMax', 'points', 'quantizeType'].forEach(id => {
             document.getElementById(id).addEventListener('input', () => {
