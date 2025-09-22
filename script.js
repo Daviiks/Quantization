@@ -29,14 +29,6 @@ class QuantizationApp {
                 }
         });
 
-        // Авторасчет при изменении параметров
-        ['function', 'xMin', 'xMax', 'points'].forEach(id => {
-            document.getElementById(id).addEventListener('input', () => {
-                this.calculate();
-            });
-        });
-    }
-
     clearFunctionField() {
         const functionInput = document.getElementById('function');
         functionInput.value = '';
