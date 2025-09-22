@@ -7,6 +7,8 @@ class QuantizationApp {
     }
 
     initializeEventListeners() {
+
+const elements = ['function', 'xMin', 'xMax', 'points', 'calculateBtn', 'quantizationType'];
         document.getElementById('calculateBtn').addEventListener('click', () => {
             this.calculate();
         });
