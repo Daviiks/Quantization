@@ -132,6 +132,21 @@ class QuantizationApp {
         
         const upperThreshold = yMin + 2 * range / 3;
         const lowerThreshold = yMin + range / 3;
+        switch (quantizeType) {
+            case 'upperOnly':
+                return yValues.map(y => y > upperThreshold ? 1 : 0);
+            case 'miidleOnly':
+                return yValuse.map(y => y >= lowerThreshold && y <= upperThreshold ? 1 : 0);
+            case 'lowerOnly':
+                return yValuse.map(y => y < lowerThreshold ? 1 : 0);
+            case 'upperMiddle':
+                return yValuse.map(y => y >= lowerThreshold ? 1 : 0);
+            case 'lowerMiddel':
+                return yValuse.map(y => y <= lowerThreshold ? 1 : 0);
+            case 'threeLevel':
+            default:
+                return yValuse.map(y => y > upperThreshold ? 1 : y < lowerThreshold ? - 1: 0);
+        }
         
         return yValues.map(y => {
             if (y > upperThreshold) return 1; // Верхний уровень
