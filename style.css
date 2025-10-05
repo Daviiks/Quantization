@@ -242,7 +242,7 @@ select:focus {
 
 .form-field {
     flex: 1;
-    min-width: 200px;
+    min-width: 100px;
 }
 
 .form-field label {
@@ -303,21 +303,6 @@ select:focus {
     margin-top: 4px;
 }
 
-.checkbox-field {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.checkbox-field input[type="checkbox"] {
-    width: auto;
-}
-
-.checkbox-field label {
-    margin-bottom: 0;
-    min-width: auto;
-}
-
 .results-section {
     margin-top: 30px;
 }
@@ -356,6 +341,11 @@ select:focus {
 .chart-container {
     padding: 15px;
     height: 300px;
+}
+
+.chart-descr {
+    padding: 15px;
+    height: 600px;
 }
 
 .info-section {

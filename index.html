@@ -56,6 +56,7 @@
                             <option value="upperMiddle">Верхний и средний</option>
                             <option value="lowerMiddle">Нижний и средний</option>
                         </select>
+                        
                     </div>
 
                     <div class="form-row">
@@ -67,9 +68,6 @@
                             <label for="xMax">Конец диапазона x:</label>
                             <input type="number" id="xMax" value="5" step="0.1" min="-100" max="100">
                         </div>
-                    </div>
-
-                    <div class="form-row">
                         <div class="form-field">
                             <label for="points">Количество точек:</label>
                             <input type="number" id="points" value="100" min="10" max="1000" step="10">
@@ -104,18 +102,13 @@
                             <canvas id="quantizedChart" aria-label="График квантованного сигнала" role="img"></canvas>
                         </div>
                     </div>
-                    <div class="chart-card">
+                    
+                </div>
+                <div class="chart-card">
                         <h3 class="chart-title">Дискретизированный сигнал</h3>
-                        <div class="chart-container">
+                        <div class="chart-descr">
                             <canvas id="sampledChart" aria-label="График дискретизированного сигнала" role="img"></canvas>
                         </div>
-                    </div>
-                    <div class="chart-card">
-                        <h3 class="chart-title">Спектральный анализ</h3>
-                        <div class="chart-container">
-                            <canvas id="spectrumChart" aria-label="График спектрального анализа" role="img"></canvas>
-                        </div>
-                    </div>
                 </div>
             </section>
 
