@@ -3,7 +3,6 @@ class QuantizationApp {
         this.originalChart = null;
         this.quantizedChart = null;
         this.sampledChart = null;
-        this.spectrumChart = null;
         this.initializeEventListeners();
         this.calculate();
     }
@@ -196,14 +195,10 @@ class QuantizationApp {
         // Находим основные гармоники в дискретизованном сигнале
         const dominantHarmonics = this.findDominantHarmonics(frequencies, magnitudes, 5);
         
-        // Проверяем алиасинг
-        const aliasingInfo = this.checkAliasing(dominantHarmonics, nyquistFrequency, originalFrequencies);
-        
         return {
             dominantHarmonics,
             nyquistFrequency,
-            samplingRate,
-            aliasingInfo
+            samplingRate
         };
     }
 
@@ -219,34 +214,9 @@ class QuantizationApp {
             .slice(0, count);
     }
 
-    checkAliasing(harmonics, nyquistFrequency, originalFrequencies = []) {
-        const aliasedHarmonics = harmonics.filter(h => h.frequency > nyquistFrequency);
-        const hasAliasing = aliasedHarmonics.length > 0;
-        
-        let aliasDetails = [];
-        if (hasAliasing) {
-            aliasDetails = aliasedHarmonics.map(h => {
-                const aliasFrequency = Math.abs(2 * nyquistFrequency - h.frequency);
-                return {
-                    original: h.frequency,
-                    alias: aliasFrequency,
-                    difference: Math.abs(h.frequency - aliasFrequency)
-                };
-            });
-        }
-        
-        return {
-            hasAliasing,
-            aliasedHarmonics,
-            aliasDetails,
-            nyquistFrequency
-        };
-    }
-
     analyzeHarmonics() {
         try {
             const samplingRate = parseFloat(document.getElementById('samplingRate').value);
-            const showSpectrum = document.getElementById('showSpectrum').checked;
             
             if (isNaN(samplingRate) || samplingRate <= 0) {
                 throw new Error('Частота дискретизации должна быть положительным числом');
@@ -263,10 +233,6 @@ class QuantizationApp {
             
             // Визуализация
             this.visualizeSampledSignal(sampledX, sampledY, xMin, xMax, functionStr);
-            
-            if (showSpectrum) {
-                this.visualizeSpectrum(analysisResults.dominantHarmonics, analysisResults.nyquistFrequency);
-            }
             
             this.showHarmonicResults(analysisResults);
             
@@ -368,62 +334,6 @@ class QuantizationApp {
         });
     }
     
-    visualizeSpectrum(harmonics, nyquistFrequency) {
-        const ctx = document.getElementById('spectrumChart').getContext('2d');
-        
-        if (this.spectrumChart) {
-            this.spectrumChart.destroy();
-        }
-        
-        const frequencies = harmonics.map(h => h.frequency);
-        const magnitudes = harmonics.map(h => h.magnitude);
-        
-        this.spectrumChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: frequencies.map(f => f.toFixed(2)),
-                datasets: [{
-                    label: 'Амплитудный спектр',
-                    data: magnitudes,
-                    backgroundColor: frequencies.map(f => 
-                        f > nyquistFrequency ? '#e74c3c' : '#3498db'
-                    ),
-                    borderColor: frequencies.map(f => 
-                        f > nyquistFrequency ? '#c0392b' : '#2980b9'
-                    ),
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    title: { 
-                        display: true, 
-                        text: 'Амплитудный спектр (красный - алиасинг)' 
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const freq = frequencies[context.dataIndex];
-                                const aliasInfo = freq > nyquistFrequency ? 
-                                    ` ⚠️ Алиасинг! Должно быть: ${(2*nyquistFrequency - freq).toFixed(2)} Гц` : '';
-                                return `Частота: ${freq.toFixed(2)} Гц, Амплитуда: ${context.parsed.y.toFixed(4)}${aliasInfo}`;
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        title: { display: true, text: 'Частота, Гц' }
-                    },
-                    y: {
-                        title: { display: true, text: 'Амплитуда' }
-                    }
-                }
-            }
-        });
-    }
-    
     showHarmonicResults(analysisResults) {
         const existingResults = document.querySelector('.harmonic-results');
         if (existingResults) {
@@ -443,34 +353,18 @@ class QuantizationApp {
         let html = `<h3>📊 Результаты анализа дискретизации:</h3>`;
         
         html += `<p><strong>Частота дискретизации:</strong> ${analysisResults.samplingRate} Гц</p>`;
-        html += `<p><strong>Частота Найквиста:</strong> ${analysisResults.nyquistFrequency.toFixed(2)} Гц</p>`;
-        
-        if (analysisResults.aliasingInfo.hasAliasing) {
-            html += `<p style="color: #e74c3c;"><strong>⚠️ Обнаружено наложение спектров (алиасинг)!</strong></p>`;
-            analysisResults.aliasingInfo.aliasDetails.forEach(alias => {
-                html += `<p style="color: #e74c3c;">Частота ${alias.original.toFixed(2)} Гц проявляется как ${alias.alias.toFixed(2)} Гц</p>`;
-            });
-        } else {
-            html += `<p style="color: #27ae60;"><strong>✓ Алиасинга не обнаружено</strong></p>`;
-        }
         
         html += `<h4>Основные гармоники:</h4>`;
         html += `<table style="width: 100%; border-collapse: collapse;">`;
         html += `<tr style="background: #34495e; color: white;">
                     <th style="padding: 8px; text-align: left;">Частота (Гц)</th>
                     <th style="padding: 8px; text-align: left;">Амплитуда</th>
-                    <th style="padding: 8px; text-align: left;">Статус</th>
                  </tr>`;
         
         analysisResults.dominantHarmonics.forEach((harmonic, index) => {
-            const status = harmonic.frequency > analysisResults.nyquistFrequency ? 
-                '⚠️ Алиасинг' : '✓ Норма';
-            const color = harmonic.frequency > analysisResults.nyquistFrequency ? '#e74c3c' : '#27ae60';
-            
             html += `<tr style="border-bottom: 1px solid #ddd;">
                         <td style="padding: 8px;">${harmonic.frequency.toFixed(2)}</td>
                         <td style="padding: 8px;">${harmonic.amplitude.toFixed(4)}</td>
-                        <td style="padding: 8px; color: ${color};">${status}</td>
                      </tr>`;
         });
         html += `</table>`;
