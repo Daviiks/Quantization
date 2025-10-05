@@ -2,13 +2,23 @@ class QuantizationApp {
     constructor() {
         this.originalChart = null;
         this.quantizedChart = null;
+        this.sampledChart = null;
+        this.spectrumChart = null;
         this.initializeEventListeners();
-        this.calculate(); // Автоматический расчет при загрузке
+        this.calculate();
     }
 
     initializeEventListeners() {
-
         const elements = ['function', 'xMin', 'xMax', 'points', 'calculateBtn', 'quantizationType'];
+        
+        elements.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener(id === 'calculateBtn' ? 'click' : 'input', 
+                    () => this.calculate());
+            }
+        });
+        
         document.getElementById('calculateBtn').addEventListener('click', () => {
             this.calculate();
         });
@@ -21,19 +31,19 @@ class QuantizationApp {
             this.clearFunctionField()
         });
 
-        elements.forEach(id => {
-                const element = document.getElementById(id);
-                if (element) {
-                    element.addEventListener(id === 'calculateBtn' ? 'click' : 'input', 
-                        () => this.calculate());
-                }
+        // Авторасчет при изменении параметров
+        ['function', 'xMin', 'xMax', 'points'].forEach(id => {
+            document.getElementById(id).addEventListener('input', () => {
+                this.calculate();
+            });
         });
+    }
 
     clearFunctionField() {
         const functionInput = document.getElementById('function');
         functionInput.value = '';
-        functionInput.focus(); // Возвращаем фокус на поле
-        this.calculate(); // Пересчитываем с пустой функцией
+        functionInput.focus();
+        this.calculate();
     }
 
     calculate() {
@@ -61,7 +71,7 @@ class QuantizationApp {
             // Визуализация
             this.visualizeResults(xValues, yValues, quantized);
             
-            // Скрываем ошибку если есть
+            // Скрывает ошибку если есть
             this.hideError();
 
         } catch (error) {
@@ -78,7 +88,6 @@ class QuantizationApp {
             xValues.push(x);
             
             try {
-                // Безопасное вычисление функции
                 const y = this.evaluateFunction(functionStr, x);
                 yValues.push(y);
             } catch (e) {
@@ -90,99 +99,384 @@ class QuantizationApp {
     }
 
     evaluateFunction(functionStr, x) {
-    // Заменяем все возможные математические функции
-    const mathFunctions = {
-        'sin': 'Math.sin',
-        'cos': 'Math.cos', 
-        'tan': 'Math.tan',
-        'sqrt': 'Math.sqrt',
-        'log': 'Math.log',
-        'log10': 'Math.log10',
-        'exp': 'Math.exp',
-        'pow': 'Math.pow',
-        'abs': 'Math.abs',
-        'PI': 'Math.PI',
-        'E': 'Math.E'
-    };
+        const mathFunctions = {
+            'sin': 'Math.sin',
+            'cos': 'Math.cos', 
+            'tan': 'Math.tan',
+            'sqrt': 'Math.sqrt',
+            'log': 'Math.log',
+            'log10': 'Math.log10',
+            'exp': 'Math.exp',
+            'pow': 'Math.pow',
+            'abs': 'Math.abs',
+            'PI': 'Math.PI',
+            'E': 'Math.E'
+        };
 
-    let processedFunction = functionStr;
-    for (const [key, value] of Object.entries(mathFunctions)) {
-        const regex = new RegExp(`\\b${key}\\(`, 'g');
-        processedFunction = processedFunction.replace(regex, `${value}(`);
-    }
-
-    const safeFunction = new Function('x', `
-        'use strict';
-        try {
-            return ${processedFunction};
-        } catch (e) {
-            throw new Error('Неправильное математическое выражение');
+        let processedFunction = functionStr;
+        for (const [key, value] of Object.entries(mathFunctions)) {
+            const regex = new RegExp(`\\b${key}\\b`, 'g');
+            processedFunction = processedFunction.replace(regex, value);
         }
-    `);
-    
-    try {
-        return safeFunction(x);
-    } catch (e) {
-        throw new Error(`Не удалось вычислить функцию: ${functionStr}`);
+
+        processedFunction = processedFunction.replace(/\^/g, '**');
+
+        const safeFunction = new Function('x', `
+            'use strict';
+            try {
+                return ${processedFunction};
+            } catch (e) {
+                throw new Error('Неправильное математическое выражение: ' + e.message);
+            }
+        `);
+        
+        try {
+            return safeFunction(x);
+        } catch (e) {
+            throw new Error(`Не удалось вычислить функцию: ${functionStr}. Ошибка: ${e.message}`);
+        }
     }
-}
 
     quantizeSignal(yValues) {
+        const quantizationType = document.getElementById('quantizationType').value;
         const yMin = Math.min(...yValues);
         const yMax = Math.max(...yValues);
         const range = yMax - yMin;
         
         const upperThreshold = yMin + 2 * range / 3;
         const lowerThreshold = yMin + range / 3;
+
         switch (quantizationType) {
             case 'upperOnly':
                 return yValues.map(y => y > upperThreshold ? 1 : 0);
-            case 'miidleOnly':
-                return yValuse.map(y => y >= lowerThreshold && y <= upperThreshold ? 1 : 0);
+            
+            case 'middleOnly':
+                return yValues.map(y => y >= lowerThreshold && y <= upperThreshold ? 1 : 0);
+            
             case 'lowerOnly':
-                return yValuse.map(y => y < lowerThreshold ? 1 : 0);
+                return yValues.map(y => y < lowerThreshold ? 1 : 0);
+            
             case 'upperMiddle':
-                return yValuse.map(y => y >= lowerThreshold ? 1 : 0);
-            case 'lowerMiddel':
-                return yValuse.map(y => y <= lowerThreshold ? 1 : 0);
+                return yValues.map(y => y >= lowerThreshold ? 1 : 0);
+            
+            case 'lowerMiddle':
+                return yValues.map(y => y <= upperThreshold ? 1 : 0);
+            
             case 'threeLevel':
             default:
-                return yValuse.map(y => y > upperThreshold ? 1 : y < lowerThreshold ? - 1: 0);
+                return yValues.map(y => y > upperThreshold ? 1 : y < lowerThreshold ? -1 : 0);
         }
     }
 
-    discretizeSignal(xValues, yValues, samplingRate) {
+    discretizeSignal(functionStr, xMin, duration, samplingRate) {
         const samplingInterval = 1 / samplingRate;
         const sampledX = [];
         const sampledY = [];
         
-        let currentX = xValues[0];
-        const xMax = xValues[xValues.length - 1];
+        const N = Math.floor(duration * samplingRate);
         
-        while (currentX <= xMax) {
-            // Находим ближайшую точку для дискретизации
-            const index = this.findNearestIndex(xValues, currentX);
-            sampledX.push(currentX);
-            sampledY.push(yValues[index]);
-            
-            currentX += samplingInterval;
+        for (let n = 0; n < N; n++) {
+            const t = xMin + n * samplingInterval;
+            try {
+                const value = this.evaluateFunction(functionStr, t);
+                sampledX.push(t);
+                sampledY.push(value);
+            } catch (e) {
+                throw new Error(`Ошибка при дискретизации в точке t=${t.toFixed(3)}: ${e.message}`);
+            }
         }
         
         return { sampledX, sampledY };
     }
-    
-    findNearestIndex(array, value) {
-        let left = 0;
-        let right = array.length - 1;
+
+    analyzeSamplingEffects(sampledY, samplingRate, originalFrequencies = []) {
+        const nyquistFrequency = samplingRate / 2;
+        const { frequencies, magnitudes } = FourierAnalyzer.computeDFT(sampledY, samplingRate);
         
-        while (left <= right) {
-            const mid = Math.floor((left + right) / 2);
-            if (array[mid] === value) return mid;
-            if (array[mid] < value) left = mid + 1;
-            else right = mid - 1;
+        // Находим основные гармоники в дискретизованном сигнале
+        const dominantHarmonics = this.findDominantHarmonics(frequencies, magnitudes, 5);
+        
+        // Проверяем алиасинг
+        const aliasingInfo = this.checkAliasing(dominantHarmonics, nyquistFrequency, originalFrequencies);
+        
+        return {
+            dominantHarmonics,
+            nyquistFrequency,
+            samplingRate,
+            aliasingInfo
+        };
+    }
+
+    findDominantHarmonics(frequencies, magnitudes, count) {
+        return magnitudes
+            .map((magnitude, index) => ({
+                frequency: frequencies[index],
+                magnitude: magnitude,
+                amplitude: 2 * magnitude // Для восстановления амплитуды
+            }))
+            .filter(h => h.frequency > 0) // Исключаем DC компоненту
+            .sort((a, b) => b.magnitude - a.magnitude)
+            .slice(0, count);
+    }
+
+    checkAliasing(harmonics, nyquistFrequency, originalFrequencies = []) {
+        const aliasedHarmonics = harmonics.filter(h => h.frequency > nyquistFrequency);
+        const hasAliasing = aliasedHarmonics.length > 0;
+        
+        let aliasDetails = [];
+        if (hasAliasing) {
+            aliasDetails = aliasedHarmonics.map(h => {
+                const aliasFrequency = Math.abs(2 * nyquistFrequency - h.frequency);
+                return {
+                    original: h.frequency,
+                    alias: aliasFrequency,
+                    difference: Math.abs(h.frequency - aliasFrequency)
+                };
+            });
         }
         
-        return left < array.length ? left : array.length - 1;
+        return {
+            hasAliasing,
+            aliasedHarmonics,
+            aliasDetails,
+            nyquistFrequency
+        };
+    }
+
+    analyzeHarmonics() {
+        try {
+            const samplingRate = parseFloat(document.getElementById('samplingRate').value);
+            const showSpectrum = document.getElementById('showSpectrum').checked;
+            
+            if (isNaN(samplingRate) || samplingRate <= 0) {
+                throw new Error('Частота дискретизации должна быть положительным числом');
+            }
+
+            const functionStr = document.getElementById('function').value;
+            const xMin = parseFloat(document.getElementById('xMin').value);
+            const xMax = parseFloat(document.getElementById('xMax').value);
+            const duration = xMax - xMin;
+
+            const { sampledX, sampledY } = this.discretizeSignal(functionStr, xMin, duration, samplingRate);
+            
+            const analysisResults = this.analyzeSamplingEffects(sampledY, samplingRate);
+            
+            // Визуализация
+            this.visualizeSampledSignal(sampledX, sampledY, xMin, xMax, functionStr);
+            
+            if (showSpectrum) {
+                this.visualizeSpectrum(analysisResults.dominantHarmonics, analysisResults.nyquistFrequency);
+            }
+            
+            this.showHarmonicResults(analysisResults);
+            
+        } catch (error) {
+            this.showError(error.message);
+        }
+    }
+    
+    visualizeSampledSignal(sampledX, sampledY, xMin, xMax, functionStr) {
+        // Создается плавный исходный сигнал для сравнения
+        const smoothPoints = 1000;
+        const smoothX = [];
+        const smoothY = [];
+        
+        for (let i = 0; i < smoothPoints; i++) {
+            const x = xMin + (xMax - xMin) * i / (smoothPoints - 1);
+            smoothX.push(x);
+            smoothY.push(this.evaluateFunction(functionStr, x));
+        }
+
+        const ctx = document.getElementById('sampledChart').getContext('2d');
+        
+        if (this.sampledChart) {
+            this.sampledChart.destroy();
+        }
+        
+        // Создаются данные для столбцов
+        const stemData = [];
+        sampledX.forEach((x, i) => {
+            stemData.push({ x: x, y: 0 });
+            stemData.push({ x: x, y: sampledY[i] });
+            stemData.push({ x: x, y: null });
+        });
+
+        this.sampledChart = new Chart(ctx, {
+            type: 'scatter',
+            data: {
+                datasets: [
+                    {
+                        label: 'Исходный аналоговый сигнал',
+                        data: smoothY.map((y, i) => ({ x: smoothX[i], y })),
+                        borderColor: 'rgba(102, 126, 234, 0.7)',
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        showLine: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Дискретные отсчеты',
+                        data: sampledY.map((y, i) => ({ x: sampledX[i], y })),
+                        borderColor: '#e74c3c',
+                        backgroundColor: '#e74c3c',
+                        borderWidth: 3,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        showLine: false
+                    },
+                    {
+                        label: 'Соединительные линии',
+                        data: stemData,
+                        borderColor: 'rgba(231, 76, 60, 0.4)',
+                        backgroundColor: 'transparent',
+                        borderWidth: 1,
+                        pointRadius: 0,
+                        showLine: true,
+                        tension: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Дискретизация сигнала'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                if (context.datasetIndex === 1) { // Дискретные отсчеты
+                                    return `Отсчет: t=${context.parsed.x.toFixed(3)}, y=${context.parsed.y.toFixed(3)}`;
+                                }
+                                return context.dataset.label + ': ' + context.parsed.y.toFixed(3);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'linear',
+                        title: { display: true, text: 'Время, с' }
+                    },
+                    y: {
+                        title: { display: true, text: 'Амплитуда' }
+                    }
+                }
+            }
+        });
+    }
+    
+    visualizeSpectrum(harmonics, nyquistFrequency) {
+        const ctx = document.getElementById('spectrumChart').getContext('2d');
+        
+        if (this.spectrumChart) {
+            this.spectrumChart.destroy();
+        }
+        
+        const frequencies = harmonics.map(h => h.frequency);
+        const magnitudes = harmonics.map(h => h.magnitude);
+        
+        this.spectrumChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: frequencies.map(f => f.toFixed(2)),
+                datasets: [{
+                    label: 'Амплитудный спектр',
+                    data: magnitudes,
+                    backgroundColor: frequencies.map(f => 
+                        f > nyquistFrequency ? '#e74c3c' : '#3498db'
+                    ),
+                    borderColor: frequencies.map(f => 
+                        f > nyquistFrequency ? '#c0392b' : '#2980b9'
+                    ),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: { 
+                        display: true, 
+                        text: 'Амплитудный спектр (красный - алиасинг)' 
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const freq = frequencies[context.dataIndex];
+                                const aliasInfo = freq > nyquistFrequency ? 
+                                    ` ⚠️ Алиасинг! Должно быть: ${(2*nyquistFrequency - freq).toFixed(2)} Гц` : '';
+                                return `Частота: ${freq.toFixed(2)} Гц, Амплитуда: ${context.parsed.y.toFixed(4)}${aliasInfo}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Частота, Гц' }
+                    },
+                    y: {
+                        title: { display: true, text: 'Амплитуда' }
+                    }
+                }
+            }
+        });
+    }
+    
+    showHarmonicResults(analysisResults) {
+        const existingResults = document.querySelector('.harmonic-results');
+        if (existingResults) {
+            existingResults.remove();
+        }
+
+        const resultsDiv = document.createElement('div');
+        resultsDiv.className = 'harmonic-results';
+        resultsDiv.style.cssText = `
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        `;
+
+        let html = `<h3>📊 Результаты анализа дискретизации:</h3>`;
+        
+        html += `<p><strong>Частота дискретизации:</strong> ${analysisResults.samplingRate} Гц</p>`;
+        html += `<p><strong>Частота Найквиста:</strong> ${analysisResults.nyquistFrequency.toFixed(2)} Гц</p>`;
+        
+        if (analysisResults.aliasingInfo.hasAliasing) {
+            html += `<p style="color: #e74c3c;"><strong>⚠️ Обнаружено наложение спектров (алиасинг)!</strong></p>`;
+            analysisResults.aliasingInfo.aliasDetails.forEach(alias => {
+                html += `<p style="color: #e74c3c;">Частота ${alias.original.toFixed(2)} Гц проявляется как ${alias.alias.toFixed(2)} Гц</p>`;
+            });
+        } else {
+            html += `<p style="color: #27ae60;"><strong>✓ Алиасинга не обнаружено</strong></p>`;
+        }
+        
+        html += `<h4>Основные гармоники:</h4>`;
+        html += `<table style="width: 100%; border-collapse: collapse;">`;
+        html += `<tr style="background: #34495e; color: white;">
+                    <th style="padding: 8px; text-align: left;">Частота (Гц)</th>
+                    <th style="padding: 8px; text-align: left;">Амплитуда</th>
+                    <th style="padding: 8px; text-align: left;">Статус</th>
+                 </tr>`;
+        
+        analysisResults.dominantHarmonics.forEach((harmonic, index) => {
+            const status = harmonic.frequency > analysisResults.nyquistFrequency ? 
+                '⚠️ Алиасинг' : '✓ Норма';
+            const color = harmonic.frequency > analysisResults.nyquistFrequency ? '#e74c3c' : '#27ae60';
+            
+            html += `<tr style="border-bottom: 1px solid #ddd;">
+                        <td style="padding: 8px;">${harmonic.frequency.toFixed(2)}</td>
+                        <td style="padding: 8px;">${harmonic.amplitude.toFixed(4)}</td>
+                        <td style="padding: 8px; color: ${color};">${status}</td>
+                     </tr>`;
+        });
+        html += `</table>`;
+
+        resultsDiv.innerHTML = html;
+        document.querySelector('.container').appendChild(resultsDiv);
     }
 
     visualizeResults(xValues, yValues, quantized) {
@@ -230,238 +524,50 @@ class QuantizationApp {
     }
 
     renderQuantizedChart(xValues, yValues, quantized) {
-    const ctx = document.getElementById('quantizedChart').getContext('2d');
-    
-    if (this.quantizedChart) {
-        this.quantizedChart.destroy();
-    }
-    
-    
-    this.quantizedChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: xValues.map(x => x.toFixed(2)),
-            datasets: [
-                {
-                    label: 'Исходный аналоговый сигнал',
-                    data: yValues,
-                    borderColor: '#3498db',
-                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
-                    borderWidth: 2,
-                    tension: 0.1,
-                    pointRadius: 0,
-                    fill: false
-                },
-                {
-                    label: 'Квантованный сигнал',
-                    data: quantized,
-                    borderColor: '#e74c3c',
-                    backgroundColor: 'rgba(231, 76, 60, 0.2)',
-                    borderWidth: 3,
-                    stepped: 'middle',
-                    pointRadius: 0,
-                    fill: true
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            interaction: {
-                mode: 'index',
-                intersect: false
-            },
-            plugins: {
-                title: {
-                    display: true,
-                    text: 'Сравнение аналогового и квантованного сигналов',
-                    font: { size: 16 }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const datasetLabel = context.dataset.label || '';
-                            const value = context.parsed.y;
-                            
-                            if (datasetLabel.includes('Квантованный')) {
-                                const levels = ['Нижний (0)', 'Средний (1)', 'Верхний (2)'];
-                                return `${datasetLabel}: ${levels[value]}`;
-                            }
-                            return `${datasetLabel}: ${value.toFixed(3)}`;
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    ticks: {
-                        callback: function(value) {
-                            const levels = ['Нижний', 'Средний', 'Верхний'];
-                            return levels[value] || value.toFixed(2);
-                        }
-                    },
-                    title: {
-                        display: true,
-                        text: 'Амплитуда / Уровни'
-                    }
-                },
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Время'
-                    }
-                }
-            }
-        }
-    });
-}
-    
-
-    analyzeHarmonics() {
-        try {
-            const samplingRate = parseFloat(document.getElementById('samplingRate').value);
-            const showSpectrum = document.getElementById('showSpectrum').checked;
-            
-            // Получаем исходные данные
-            const functionStr = document.getElementById('function').value;
-            const xMin = parseFloat(document.getElementById('xMin').value);
-            const xMax = parseFloat(document.getElementById('xMax').value);
-            const points = parseInt(document.getElementById('points').value);
-            
-            const { xValues, yValues } = this.generateData(functionStr, xMin, xMax, points);
-            
-            // Дискретизация
-            const { sampledX, sampledY } = this.discretizeSignal(xValues, yValues, samplingRate);
-            
-            // Анализ Фурье
-            const { frequencies, magnitudes, phases } = 
-                FourierAnalyzer.computeDFT(sampledY, samplingRate);
-            
-            // Находим основную гармонику
-            const dominantHarmonic = FourierAnalyzer.findDominantHarmonic(frequencies, magnitudes);
-            
-            // Визуализация
-            this.visualizeSampledSignal(sampledX, sampledY, xValues, yValues);
-            
-            if (showSpectrum) {
-                this.visualizeSpectrum(frequencies, magnitudes, dominantHarmonic);
-            }
-            
-            this.showHarmonicResults(dominantHarmonic, sampledY.length);
-            
-        } catch (error) {
-            this.showError(error.message);
-        }
-    }
-    
-    visualizeSampledSignal(sampledX, sampledY, originalX, originalY) {
-        const ctx = document.getElementById('sampledChart').getContext('2d');
+        const ctx = document.getElementById('quantizedChart').getContext('2d');
         
-        if (this.sampledChart) {
-            this.sampledChart.destroy();
+        if (this.quantizedChart) {
+            this.quantizedChart.destroy();
         }
         
-        const stemData = [];
-        sampledX.forEach((x, i) => {
-            stemData.push({ x: x, y: 0 });    // Начало у оси
-            stemData.push({ x: x, y: sampledY[i] }); // Вершина
-            stemData.push({ x: x, y: null }); // Разрыв
-        });
-    
-        this.sampledChart = new Chart(ctx, {
-            type: 'scatter',
-                data: {
-                    datasets: [
-                        {
-                            label: 'Исходный сигнал',
-                            data: originalY.map((y, i) => ({ x: originalX[i], y })),
-                            borderColor: 'rgba(102, 126, 234, 0.5)',
-                            backgroundColor: 'transparent',
-                            borderWidth: 2,
-                            pointRadius: 0,
-                            showLine: true
-                        },
-                        {
-                            label: 'Дискретные отсчеты',
-                            data: sampledY.map((y, i) => ({ x: sampledX[i], y })),
-                            borderColor: '#e74c3c',
-                            backgroundColor: '#e74c3c',
-                            borderWidth: 2,
-                            pointRadius: 6,
-                            pointHoverRadius: 8,
-                            showLine: false
-                        },
-                        {
-                            label: 'Столбцы',
-                            data: stemData,
-                            borderColor: 'rgba(231, 76, 60, 0.6)',
-                            backgroundColor: 'transparent',
-                            borderWidth: 2,
-                            pointRadius: 0,
-                            showLine: true,
-                            tension: 0 // Прямые линии
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        x: {
-                            type: 'linear',
-                            title: { display: true, text: 'Время' }
-                        },
-                        y: {
-                            title: { display: true, text: 'Амплитуда' }
-                        }
-                }
-                }
-        });
-    }
-    
-    visualizeSpectrum(frequencies, magnitudes, dominantHarmonic) {
-        const ctx = document.getElementById('spectrumChart').getContext('2d');
-        
-        if (this.spectrumChart) {
-            this.spectrumChart.destroy();
-        }
-        
-        this.spectrumChart = new Chart(ctx, {
-            type: 'bar',
+        this.quantizedChart = new Chart(ctx, {
+            type: 'line',
             data: {
-                labels: frequencies.map(f => f.toFixed(2)),
-                datasets: [{
-                    label: 'Амплитудный спектр',
-                    data: magnitudes,
-                    backgroundColor: frequencies.map((f, i) => 
-                        dominantHarmonic && i === frequencies.indexOf(dominantHarmonic.frequency) ?
-                        '#e74c3c' : '#3498db'
-                    )
-                }]
+                labels: xValues.map(x => x.toFixed(2)),
+                datasets: [
+                    {
+                        label: 'Исходный аналоговый сигнал',
+                        data: yValues,
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        pointRadius: 0,
+                        fill: false
+                    },
+                    {
+                        label: 'Квантованный сигнал',
+                        data: quantized,
+                        borderColor: '#e74c3c',
+                        backgroundColor: 'rgba(231, 76, 60, 0.2)',
+                        borderWidth: 3,
+                        stepped: 'middle',
+                        pointRadius: 0,
+                        fill: true
+                    }
+                ]
             },
             options: {
                 responsive: true,
                 plugins: {
-                    title: { display: true, text: 'Амплитудный спектр' }
+                    title: {
+                        display: true,
+                        text: 'Сравнение аналогового и квантованного сигналов',
+                        font: { size: 16 }
+                    }
                 }
             }
         });
-    }
-    
-    showHarmonicResults(dominantHarmonic, sampleCount) {
-        const resultsDiv = document.createElement('div');
-        resultsDiv.className = 'harmonic-results';
-        
-        if (dominantHarmonic) {
-            resultsDiv.innerHTML = `
-                <h3>Результаты анализа:</h3>
-                <p>Основная гармоника: ${dominantHarmonic.frequency.toFixed(2)} Гц</p>
-                <p>Амплитуда: ${dominantHarmonic.amplitude.toFixed(4)}</p>
-                <p>Количество отсчетов: ${sampleCount}</p>
-            `;
-        } else {
-            resultsDiv.innerHTML = '<p>Не удалось определить основную гармонику</p>';
-        }
-        
-        document.querySelector('.container').appendChild(resultsDiv);
     }
 
     showError(message) {
@@ -482,7 +588,6 @@ class FourierAnalyzer {
         const magnitudes = [];
         const phases = [];
         
-        // Вычисляем DFT
         for (let k = 0; k < N; k++) {
             let real = 0;
             let imag = 0;
@@ -493,7 +598,6 @@ class FourierAnalyzer {
                 imag -= signal[n] * Math.sin(angle);
             }
             
-            // Нормализация
             real /= N;
             imag /= N;
             
@@ -501,7 +605,7 @@ class FourierAnalyzer {
             const phase = Math.atan2(imag, real);
             const frequency = k * samplingRate / N;
             
-            if (frequency <= samplingRate / 2) { // Теорема Найквиста
+            if (frequency <= samplingRate / 2) {
                 frequencies.push(frequency);
                 magnitudes.push(magnitude);
                 phases.push(phase);
@@ -510,60 +614,9 @@ class FourierAnalyzer {
         
         return { frequencies, magnitudes, phases };
     }
-    
-    static findDominantHarmonic(frequencies, magnitudes) {
-        let maxMagnitude = 0;
-        let dominantIndex = -1;
-        
-        for (let i = 1; i < magnitudes.length; i++) { // Пропускаем DC компоненту
-            if (magnitudes[i] > maxMagnitude) {
-                maxMagnitude = magnitudes[i];
-                dominantIndex = i;
-            }
-        }
-        
-        if (dominantIndex === -1) return null;
-        
-        return {
-            frequency: frequencies[dominantIndex],
-            magnitude: magnitudes[dominantIndex],
-            amplitude: 2 * magnitudes[dominantIndex] // Для восстановления амплитуды
-        };
-    }
 }
 
-class FunctionParser {
-    static parseFunction(functionStr, x) {
-        try {
-            // Создаем scope с переменными
-            const scope = {
-                x: x,
-                // Математические константы
-                pi: Math.PI,
-                e: Math.E,
-                // Дополнительные функции
-                sinc: (x) => x === 0 ? 1 : Math.sin(x) / x,
-                rect: (x) => Math.abs(x) <= 0.5 ? 1 : 0
-            };
-            
-            // Парсим и вычисляем выражение
-            return math.evaluate(functionStr, scope);
-        } catch (error) {
-            throw new Error(`Ошибка парсинга функции: ${error.message}`);
-        }
-    }
-    
-    static getAvailableFunctions() {
-        return {
-            'Основные': ['x', 'x^2', 'sin(x)', 'cos(x)', 'tan(x)', 'exp(x)', 'log(x)'],
-            'Сложные': ['sin(x)*cos(2*x)', 'exp(-x^2)', 'sinc(x)', 'rect(x)'],
-            'Составные': ['sin(x) + 0.5*cos(3*x)', 'x*sin(10*x)', 'pulse(x)']
-        };
-    }
-}
-
-// Запуск приложения при загрузке страницы
+// Запуск приложения
 document.addEventListener('DOMContentLoaded', () => {
     new QuantizationApp();
 });
-
