@@ -153,13 +153,13 @@ class QuantizationApp {
                 return yValues.map(y => y >= lowerThreshold && y <= upperThreshold ? 1 : 0);
             
             case 'lowerOnly':
-                return yValues.map(y => y < lowerThreshold ? 1 : 0);
+                return yValues.map(y => y < lowerThreshold ? -1 : 0);
             
             case 'upperMiddle':
-                return yValues.map(y => y >= lowerThreshold ? -1 : 0);
+                return yValues.map(y => y >= lowerThreshold ? 1 : 0);
             
             case 'lowerMiddle':
-                return yValues.map(y => y <= upperThreshold ? 1 : 0);
+                return yValues.map(y => y <= upperThreshold ? -1 : 0);
             
             case 'threeLevel':
             default:
@@ -515,3 +515,4 @@ document.addEventListener('DOMContentLoaded', () => {
     new QuantizationApp();
 
 });
+
