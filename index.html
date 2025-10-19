@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -69,147 +68,83 @@
                             <small class="input-hint">Поддерживаются стандартные математические функции</small>
                         </div>
 
+                    <div class="form-field">
+                        <label for="quantizationType">Тип квантования:</label>
+                        <select id="quantizationType">
+                            <option value="threeLevel">Трехуровневый (верхний/средний/нижний)</option>
+                            <option value="upperOnly">Только верхний уровень</option>
+                            <option value="middleOnly">Только средний уровень</option>
+                            <option value="lowerOnly">Только нижний уровень</option>
+                            <option value="upperMiddle">Верхний и средний</option>
+                            <option value="lowerMiddle">Нижний и средний</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row">
                         <div class="form-field">
-                            <label for="quantizationType">Тип квантования:</label>
-                            <select id="quantizationType">
-                                <option value="threeLevel">Трехуровневый (верхний/средний/нижний)</option>
-                                <option value="upperOnly">Только верхний уровень</option>
-                                <option value="middleOnly">Только средний уровень</option>
-                                <option value="lowerOnly">Только нижний уровень</option>
-                                <option value="upperMiddle">Верхний и средний</option>
-                                <option value="lowerMiddle">Нижний и средний</option>
-                            </select>
-                            
+                            <label for="xMin">Начало диапазона x:</label>
+                            <input type="number" id="xMin" value="-5" step="0.1" min="-100" max="100">
                         </div>
-
-                        <div class="form-row">
-                            <div class="form-field">
-                                <label for="xMin">Начало диапазона x:</label>
-                                <input type="number" id="xMin" value="-5" step="0.1" min="-100" max="100">
-                            </div>
-                            <div class="form-field">
-                                <label for="xMax">Конец диапазона x:</label>
-                                <input type="number" id="xMax" value="5" step="0.1" min="-100" max="100">
-                            </div>
-                            <div class="form-field">
-                                <label for="points">Количество точек:</label>
-                                <input type="number" id="points" value="100" min="10" max="1000" step="10">
-                                <small class="input-hint">10-1000 точек</small>
-                            </div>
-                            <div class="form-field">
-                                <label for="samplingRate">Частота дискретизации (Гц):</label>
-                                <input type="number" id="samplingRate" value="10" min="1" max="100" step="1">
-                                <small class="input-hint">1-100 Гц</small>
-                            </div>
+                        <div class="form-field">
+                            <label for="xMax">Конец диапазона x:</label>
+                            <input type="number" id="xMax" value="5" step="0.1" min="-100" max="100">
                         </div>
                     </div>
 
-                    <div class="actions">
-                        <button id="calculateBtn" class="btn btn-primary">Рассчитать и построить графики</button>
-                        <button id="analyzeBtn" class="btn btn-secondary">Анализ гармоник</button>
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label for="points">Количество точек:</label>
+                            <input type="number" id="points" value="100" min="10" max="1000" step="10">
+                            <small class="input-hint">10-1000 точек</small>
+                        </div>
+                        <div class="form-field">
+                            <label for="samplingRate">Частота дискретизации (Гц):</label>
+                            <input type="number" id="samplingRate" value="10" min="1" max="100" step="1">
+                            <small class="input-hint">1-100 Гц</small>
+                        </div>
                     </div>
-                </section>
-                <section class="results-section" aria-labelledby="results-title">
-                    <h2 id="results-title" class="section-title">Результаты квантования</h2>
-                    <div class="results-grid">
-                        <div class="chart-card">
-                            <h3 class="chart-title">Исходный сигнал</h3>
-                            <div class="chart-container">
-                                <canvas id="originalChart" aria-label="График исходного сигнала" role="img"></canvas>
-                            </div>
+
+                    <div class="form-field checkbox-field">
+                        <input type="checkbox" id="showSpectrum">
+                        <label for="showSpectrum">Показать спектральный анализ</label>
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button id="calculateBtn" class="btn btn-primary">Рассчитать и построить графики</button>
+                    <button id="analyzeBtn" class="btn btn-secondary">Анализ гармоник</button>
+                </div>
+            </section>
+
+            <section class="results-section" aria-labelledby="results-title">
+                <h2 id="results-title" class="section-title">Результаты квантования</h2>
+                <div class="results-grid">
+                    <div class="chart-card">
+                        <h3 class="chart-title">Исходный сигнал</h3>
+                        <div class="chart-container">
+                            <canvas id="originalChart" aria-label="График исходного сигнала" role="img"></canvas>
                         </div>
-                        <div class="chart-card">
-                            <h3 class="chart-title">Квантованный сигнал</h3>
-                            <div class="chart-container">
-                                <canvas id="quantizedChart" aria-label="График квантованного сигнала" role="img"></canvas>
-                            </div>
-                        </div>
-                        
                     </div>
                     <div class="chart-card">
-                            <h3 class="chart-title">Дискретизированный сигнал</h3>
-                            <div class="chart-descr">
-                                <canvas id="sampledChart" aria-label="График дискретизированного сигнала" role="img"></canvas>
-                            </div>
-                    </div>
-                </section>
-            </div>
-
-            <!-- Задание 2: Дихотомическое кодирование -->
-            <div id="dichotomic-content" class="assignment-content">
-                <section class="card" aria-labelledby="dichotomic-settings-title">
-                    <h2 id="dichotomic-settings-title" class="card-title">Дихотомическое кодирование сообщений</h2>
-                
-                    <div class="input-section">
-                        <h3>Добавить сообщения:</h3>
-                        <div class="form-row">
-                            <div class="form-field">
-                                <label for="messageInput">Сообщение:</label>
-                                <input type="text" id="messageInput" placeholder="Введите сообщение" value="A">
-                            </div>
-                            <div class="form-field">
-                                <label for="probabilityInput">Вероятность:</label>
-                                <input type="number" id="probabilityInput" placeholder="0.00" step="0.01" min="0" max="1" value="0.4">
-                            </div>
-                            <div class="form-field">
-                                <label>&nbsp;</label>
-                                <button id="addMessageBtn" class="btn btn-primary">Добавить сообщение</button>
-                            </div>
-                        </div>
-                    
-                        <div class="form-row">
-                            <div class="form-field">
-                                <button id="useExampleBtn" class="btn btn-secondary">Использовать пример</button>
-                                <button id="clearMessagesBtn" class="btn btn-secondary">Очистить все</button>
-                            </div>
+                        <h3 class="chart-title">Квантованный сигнал</h3>
+                        <div class="chart-container">
+                            <canvas id="quantizedChart" aria-label="График квантованного сигнала" role="img"></canvas>
                         </div>
                     </div>
-
-                    <div class="messages-section">
-                        <h3>Текущие сообщения:</h3>
-                        <table class="messages-table" id="messagesTable">
-                            <thead>
-                                <tr>
-                                    <th>Сообщение</th>
-                                    <th>Вероятность</th>
-                                    <th>Действие</th>
-                                </tr>
-                            </thead>
-                            <tbody id="messagesBody">
-                            <!-- Сообщения будут добавляться сюда -->
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="actions">
-                        <button id="calculateCodingBtn" class="btn btn-primary">Рассчитать кодирование</button>
-                    </div>
-                </section>
-
-                <section class="results-section" aria-labelledby="dichotomic-results-title">
-                    <h2 id="dichotomic-results-title" class="section-title">Результаты дихотомического кодирования</h2>
-                
-                    <div id="dichotomicResults" style="display: none;">
-                        <table class="results-table">
-                            <thead>
-                                <tr>
-                                    <th>Сообщение</th>
-                                    <th>Вероятность</th>
-                                    <th>Информация (Хартли)</th>
-                                    <th>Код</th>
-                                </tr>
-                            </thead>
-                            <tbody id="resultsBody">
-                                <!-- Результаты будут добавляться сюда -->
-                            </tbody>
-                        </table>
-                    
-                        <div class="summary-stats" id="summaryStats">
-                            <!-- Статистика будет добавляться сюда -->
+                    <div class="chart-card">
+                        <h3 class="chart-title">Дискретизированный сигнал</h3>
+                        <div class="chart-container">
+                            <canvas id="sampledChart" aria-label="График дискретизированного сигнала" role="img"></canvas>
                         </div>
                     </div>
-                </section>
-            </div>
+                    <div class="chart-card">
+                        <h3 class="chart-title">Спектральный анализ</h3>
+                        <div class="chart-container">
+                            <canvas id="spectrumChart" aria-label="График спектрального анализа" role="img"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
             <div id="error" class="error-message" style="display: none;" role="alert" aria-live="polite"></div>
 
@@ -240,144 +175,4 @@
     <script src="switch.js"></script>
     <script src="templates.js"></script>
 </body>
-=======
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Квантование сигнала по уровням</title>
-    <meta name="description" content="Визуализация процесса квантования сигналов с различными уровнями и анализом спектра">
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/mathjs.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.1.0/dist/chartjs-plugin-annotation.min.js"></script>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>Квантование сигнала по уровням</h1>
-            <p class="subtitle">Визуализация и анализ процесса квантования аналоговых сигналов</p>
-        </header>
-
-        <main>
-            <section class="card" aria-labelledby="settings-title">
-                <h2 id="settings-title" class="card-title">Параметры сигнала и квантования</h2>
-                
-                <div class="form-grid">
-                    <div class="form-field">
-                        <label for="function">Функция f(x):</label>
-                        <div class="input-with-button">
-                            <input type="text" id="function" value="sin(x)" list="functionExamples" 
-                                   placeholder="Введите математическое выражение">
-                            <button id="clearFunctionBtn" class="btn btn-icon" type="button" 
-                                    aria-label="Очистить поле ввода">×</button>
-                        </div>
-                        <datalist id="functionExamples">
-                            <option value="sin(x)">
-                            <option value="cos(x)">
-                            <option value="tan(x)">
-                            <option value="exp(x)">
-                            <option value="log(x)">
-                            <option value="x^2">
-                            <option value="sqrt(x)">
-                            <option value="sin(x)*cos(2*x)">
-                            <option value="exp(-x^2)">
-                            <option value="sinc(x)">
-                            <option value="sin(x) + 0.5*cos(3*x)">
-                        </datalist>
-                        <small class="input-hint">Поддерживаются стандартные математические функции</small>
-                    </div>
-
-                    <div class="form-field">
-                        <label for="quantizationType">Тип квантования:</label>
-                        <select id="quantizationType">
-                            <option value="threeLevel">Трехуровневый (верхний/средний/нижний)</option>
-                            <option value="upperOnly">Только верхний уровень</option>
-                            <option value="middleOnly">Только средний уровень</option>
-                            <option value="lowerOnly">Только нижний уровень</option>
-                            <option value="upperMiddle">Верхний и средний</option>
-                            <option value="lowerMiddle">Нижний и средний</option>
-                        </select>
-                        
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-field">
-                            <label for="xMin">Начало диапазона x:</label>
-                            <input type="number" id="xMin" value="-5" step="0.1" min="-100" max="100">
-                        </div>
-                        <div class="form-field">
-                            <label for="xMax">Конец диапазона x:</label>
-                            <input type="number" id="xMax" value="5" step="0.1" min="-100" max="100">
-                        </div>
-                        <div class="form-field">
-                            <label for="points">Количество точек:</label>
-                            <input type="number" id="points" value="100" min="10" max="1000" step="10">
-                            <small class="input-hint">10-1000 точек</small>
-                        </div>
-                        <div class="form-field">
-                            <label for="samplingRate">Частота дискретизации (Гц):</label>
-                            <input type="number" id="samplingRate" value="10" min="1" max="100" step="1">
-                            <small class="input-hint">1-100 Гц</small>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="actions">
-                    <button id="calculateBtn" class="btn btn-primary">Рассчитать и построить графики</button>
-                    <button id="analyzeBtn" class="btn btn-secondary">Анализ гармоник</button>
-                </div>
-            </section>
-
-            <section class="results-section" aria-labelledby="results-title">
-                <h2 id="results-title" class="section-title">Результаты квантования</h2>
-                <div class="results-grid">
-                    <div class="chart-card">
-                        <h3 class="chart-title">Исходный сигнал</h3>
-                        <div class="chart-container">
-                            <canvas id="originalChart" aria-label="График исходного сигнала" role="img"></canvas>
-                        </div>
-                    </div>
-                    <div class="chart-card">
-                        <h3 class="chart-title">Квантованный сигнал</h3>
-                        <div class="chart-container">
-                            <canvas id="quantizedChart" aria-label="График квантованного сигнала" role="img"></canvas>
-                        </div>
-                    </div>
-                    
-                </div>
-                <div class="chart-card">
-                        <h3 class="chart-title">Дискретизированный сигнал</h3>
-                        <div class="chart-descr">
-                            <canvas id="sampledChart" aria-label="График дискретизированного сигнала" role="img"></canvas>
-                        </div>
-                </div>
-            </section>
-
-            <div id="error" class="error-message" style="display: none;" role="alert" aria-live="polite"></div>
-
-            <section class="info-section" aria-labelledby="info-title">
-                <h2 id="info-title" class="section-title">О процессе квантования</h2>
-                <div class="info-grid">
-                    <div class="info-card">
-                        <h3>Что такое квантование?</h3>
-                        <p>Квантование - процесс преобразования непрерывного сигнала в дискретный по уровню. В данном случае используется трехуровневое квантование.</p>
-                    </div>
-                    <div class="info-card">
-                        <h3>Уровни квантования</h3>
-                        <ul>
-                            <li><strong>Верхний уровень:</strong> значения выше определенного порога</li>
-                            <li><strong>Средний уровень:</strong> значения вблизи нуля</li>
-                            <li><strong>Нижний уровень:</strong> значения ниже определенного порога</li>
-                        </ul>
-                    </div>
-                </div>
-            </section>
-        </main>
-    </div>
-
-    <script src="script.js"></script>
-</body>
->>>>>>> 78fbce9b10153dcb8bf58c528de9d0a8f2d4a6a0
 </html>
