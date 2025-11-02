@@ -1,3 +1,95 @@
+class AssignmentManager {
+    constructor() {
+        this.currentAssignment = 'quantization';
+        this.initializeSwitcher();
+    }
+
+    initializeSwitcher() {
+        const switcherButtons = document.querySelectorAll('.btn-switcher');
+        
+        switcherButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                const assignment = e.target.dataset.assignment;
+                this.switchAssignment(assignment);
+            });
+        });
+    }
+
+    switchAssignment(assignment) {
+        // Обновляем активные кнопки
+        document.querySelectorAll('.btn-switcher').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.querySelector(`[data-assignment="${assignment}"]`).classList.add('active');
+
+        // Скрываем все контенты
+        document.querySelectorAll('.assignment-content').forEach(content => {
+            content.classList.remove('active');
+        });
+
+        // Показываем выбранный контент
+        document.getElementById(`${assignment}-content`).classList.add('active');
+
+        // Очищаем результаты предыдущего задания
+        this.clearPreviousResults(assignment);
+
+        this.currentAssignment = assignment;
+    }
+
+    clearPreviousResults(newAssignment) {
+        if (newAssignment === 'dichotomic') {
+            // Очищаем результаты квантования
+            this.clearQuantizationResults();
+        } else {
+            // Очищаем результаты дихотомического поиска
+            this.clearDichotomicResults();
+        }
+    }
+
+    clearQuantizationResults() {
+        // Удаляем результаты анализа гармоник
+        this.hideHarmonicResults();
+    
+        // Очищаем таблицу
+        const tableBody = document.getElementById('harmonics-table-body');
+        if (tableBody) {
+            tableBody.innerHTML = '';
+        }
+    
+        // Сбрасываем значения
+        document.getElementById('sampling-rate-value').textContent = '-';
+        document.getElementById('nyquist-frequency').textContent = '-';
+        document.getElementById('harmonics-count').textContent = '0';
+    
+        // Очищаем графики
+        const charts = ['originalChart', 'quantizedChart', 'sampledChart'];
+        charts.forEach(chartId => {
+            const canvas = document.getElementById(chartId);
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        });
+    
+        // Скрываем ошибки
+        const errorDiv = document.getElementById('error');
+        if (errorDiv) {
+            errorDiv.style.display = 'none';
+        }
+    }
+
+    clearDichotomicResults() {
+        // Очищаем результаты поиска
+        const stepsContainer = document.getElementById('steps');
+        const alphabetInfo = document.getElementById('alphabetInfo');
+        const infoContainer = document.getElementById('info');
+        
+        if (stepsContainer) stepsContainer.innerHTML = '';
+        if (alphabetInfo) alphabetInfo.innerHTML = '';
+        if (infoContainer) infoContainer.innerHTML = '';
+    }
+}
+
 class QuantizationApp {
     constructor() {
         this.originalChart = null;
@@ -217,7 +309,7 @@ class QuantizationApp {
     analyzeHarmonics() {
         try {
             const samplingRate = parseFloat(document.getElementById('samplingRate').value);
-            
+        
             if (isNaN(samplingRate) || samplingRate <= 0) {
                 throw new Error('Частота дискретизации должна быть положительным числом');
             }
@@ -228,16 +320,16 @@ class QuantizationApp {
             const duration = xMax - xMin;
 
             const { sampledX, sampledY } = this.discretizeSignal(functionStr, xMin, duration, samplingRate);
-            
+        
             const analysisResults = this.analyzeSamplingEffects(sampledY, samplingRate);
-            
-            // Визуализация
+        
+            // Визуализация и показ результатов
             this.visualizeSampledSignal(sampledX, sampledY, xMin, xMax, functionStr);
-            
             this.showHarmonicResults(analysisResults);
-            
+        
         } catch (error) {
             this.showError(error.message);
+            this.hideHarmonicResults();
         }
     }
     
@@ -335,42 +427,54 @@ class QuantizationApp {
     }
     
     showHarmonicResults(analysisResults) {
-        const existingResults = document.querySelector('.harmonic-results');
-        if (existingResults) {
-            existingResults.remove();
+        const resultsSection = document.getElementById('harmonic-results-section');
+        const tableBody = document.getElementById('harmonics-table-body');
+    
+        if (!resultsSection || !tableBody) {
+            console.error('HTML elements for harmonic results not found');
+            return;
         }
-
-        const resultsDiv = document.createElement('div');
-        resultsDiv.className = 'harmonic-results';
-        resultsDiv.style.cssText = `
-            margin-top: 20px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border-left: 4px solid #3498db;
-        `;
-
-        let html = `<h3>📊 Результаты анализа дискретизации:</h3>`;
-        
-        html += `<p><strong>Частота дискретизации:</strong> ${analysisResults.samplingRate} Гц</p>`;
-        
-        html += `<h4>Основные гармоники:</h4>`;
-        html += `<table style="width: 100%; border-collapse: collapse;">`;
-        html += `<tr style="background: #34495e; color: white;">
-                    <th style="padding: 8px; text-align: left;">Частота (Гц)</th>
-                    <th style="padding: 8px; text-align: left;">Амплитуда</th>
-                 </tr>`;
-        
+    
+        // Заполняем данные
+        document.getElementById('sampling-rate-value').textContent = analysisResults.samplingRate;
+        document.getElementById('nyquist-frequency').textContent = analysisResults.nyquistFrequency.toFixed(2);
+        document.getElementById('harmonics-count').textContent = analysisResults.dominantHarmonics.length;
+    
+        // Очищаем таблицу
+        tableBody.innerHTML = '';
+    
+        // Заполняем таблицу гармониками
         analysisResults.dominantHarmonics.forEach((harmonic, index) => {
-            html += `<tr style="border-bottom: 1px solid #ddd;">
-                        <td style="padding: 8px;">${harmonic.frequency.toFixed(2)}</td>
-                        <td style="padding: 8px;">${harmonic.amplitude.toFixed(4)}</td>
-                     </tr>`;
+            const row = document.createElement('tr');
+        
+            // Вычисляем относительную мощность (в % от максимальной)
+            const maxAmplitude = Math.max(...analysisResults.dominantHarmonics.map(h => h.amplitude));
+            const relativePower = (harmonic.amplitude / maxAmplitude * 100).toFixed(1);
+        
+            row.innerHTML = `
+                <td>${harmonic.frequency.toFixed(2)}</td>
+                <td>${harmonic.amplitude.toFixed(4)}</td>
+                <td>${relativePower}%</td>
+            `;
+        
+            tableBody.appendChild(row);
         });
-        html += `</table>`;
+    
+        // Показываем секцию
+        resultsSection.style.display = 'block';
+    
+        // Прокручиваем к результатам
+        resultsSection.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'nearest' 
+        });
+    }
 
-        resultsDiv.innerHTML = html;
-        document.querySelector('.container').appendChild(resultsDiv);
+    hideHarmonicResults() {
+        const resultsSection = document.getElementById('harmonic-results-section');
+        if (resultsSection) {
+            resultsSection.style.display = 'none';
+        }
     }
 
     visualizeResults(xValues, yValues, quantized) {
